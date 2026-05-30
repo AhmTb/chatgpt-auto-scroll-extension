@@ -1,5 +1,5 @@
 # ChatGPT Auto Scroll
-
+ChatGPT web was annoying me so i came up with this.
 A small Chrome extension that keeps ChatGPT pinned to the latest answer.
 
 This project is not affiliated with OpenAI.
