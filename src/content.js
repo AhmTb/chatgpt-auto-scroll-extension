@@ -12,6 +12,7 @@
   const SCROLLER_CACHE_MS = 2500;
   const MIN_SCROLLER_HEIGHT_PX = 280;
   const CLICK_FOLLOW_MS = 30000;
+  const COMPOSER_GAP_PX = 18;
   const SCROLLABLE_SELECTOR = [
     "main",
     "[role='main']",
@@ -241,39 +242,92 @@
     scroller.scrollTop = top;
   }
 
+  function scrollElementBy(scroller, delta) {
+    if (Math.abs(delta) < 2) {
+      return;
+    }
+
+    if (scroller === getDocumentScroller()) {
+      window.scrollBy({ top: delta, behavior: "auto" });
+      return;
+    }
+
+    scroller.scrollTop += delta;
+  }
+
+  function findComposerTop() {
+    const input = document.querySelector(COMPOSER_SELECTOR);
+    const composer = input?.closest("form") || input;
+
+    if (!isElementVisible(composer)) {
+      return null;
+    }
+
+    const rect = composer.getBoundingClientRect();
+    return rect.top > window.innerHeight * 0.4 ? rect.top : null;
+  }
+
+  function getTargetBottom(scroller) {
+    const scrollerBottom =
+      scroller === getDocumentScroller() ? window.innerHeight : scroller.getBoundingClientRect().bottom;
+    const composerTop = findComposerTop();
+    const visibleBottom = composerTop ? Math.min(scrollerBottom, composerTop) : scrollerBottom;
+
+    return visibleBottom - COMPOSER_GAP_PX;
+  }
+
   function findLatestConversationItem() {
     const root = findConversationRoot();
     if (!root) {
       return null;
     }
 
-    const items = root.querySelectorAll(
-      "[data-message-author-role], [data-testid^='conversation-turn'], article"
-    );
+    const items = root.querySelectorAll([
+      "[data-message-author-role]",
+      "[data-testid^='conversation-turn']",
+      "article",
+      "button",
+      "[role='button']"
+    ].join(","));
+    let latestItem = null;
+    let latestBottom = -Infinity;
 
     for (let index = items.length - 1; index >= 0; index -= 1) {
       const item = items[index];
-      if (isElementVisible(item)) {
-        return item;
+      if (!isElementVisible(item) || findComposerInput(item)) {
+        continue;
+      }
+
+      const rect = item.getBoundingClientRect();
+      if (rect.bottom > latestBottom) {
+        latestBottom = rect.bottom;
+        latestItem = item;
       }
     }
 
-    return null;
+    return latestItem;
+  }
+
+  function alignLatestItemWithComposer(scroller) {
+    const latestItem = findLatestConversationItem();
+    if (!latestItem) {
+      return false;
+    }
+
+    const targetBottom = getTargetBottom(scroller);
+    const itemBottom = latestItem.getBoundingClientRect().bottom;
+    scrollElementBy(scroller, itemBottom - targetBottom);
+    return true;
   }
 
   function scrollAllToBottom() {
     lastProgrammaticScroll = now();
+    const scroller = findBestScroller({ forceRefresh: true });
 
-    const latestItem = findLatestConversationItem();
-    if (latestItem) {
-      latestItem.scrollIntoView({
-        block: "end",
-        inline: "nearest",
-        behavior: "auto"
-      });
+    if (!alignLatestItemWithComposer(scroller)) {
+      scrollElementToBottom(scroller);
     }
 
-    scrollElementToBottom(findBestScroller({ forceRefresh: true }));
     lastKnownNearBottom = true;
   }
 
