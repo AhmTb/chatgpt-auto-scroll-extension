@@ -27,6 +27,8 @@ assert.ok(!manifest.optional_host_permissions, "extension should not request opt
 
 const content = await readFile(new URL("../src/content.js", import.meta.url), "utf8");
 assert.match(content, /MutationObserver/);
+assert.match(content, /scrollIntoView/);
+assert.match(content, /CLICK_FOLLOW_MS/);
 assert.match(content, /storage\.local/);
 assert.doesNotMatch(content, /fetch\s*\(/);
 assert.doesNotMatch(content, /XMLHttpRequest/);

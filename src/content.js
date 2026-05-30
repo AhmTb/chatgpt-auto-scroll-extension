@@ -11,6 +11,7 @@
   const PROGRAMMATIC_SCROLL_GRACE_MS = 350;
   const SCROLLER_CACHE_MS = 2500;
   const MIN_SCROLLER_HEIGHT_PX = 280;
+  const CLICK_FOLLOW_MS = 30000;
   const SCROLLABLE_SELECTOR = [
     "main",
     "[role='main']",
@@ -39,6 +40,7 @@
   let scheduled = false;
   let lastProgrammaticScroll = 0;
   let userPausedFollow = false;
+  let lastKnownNearBottom = true;
   let mutationObserver = null;
   let cachedScroller = null;
   let cachedScrollerAt = 0;
@@ -149,7 +151,7 @@
   }
 
   function hasChatSurface() {
-    return Boolean(findConversationRoot() && document.querySelector(COMPOSER_SELECTOR));
+    return Boolean(findConversationRoot());
   }
 
   function addAncestorScrollers(root, candidates) {
@@ -239,9 +241,40 @@
     scroller.scrollTop = top;
   }
 
+  function findLatestConversationItem() {
+    const root = findConversationRoot();
+    if (!root) {
+      return null;
+    }
+
+    const items = root.querySelectorAll(
+      "[data-message-author-role], [data-testid^='conversation-turn'], article"
+    );
+
+    for (let index = items.length - 1; index >= 0; index -= 1) {
+      const item = items[index];
+      if (isElementVisible(item)) {
+        return item;
+      }
+    }
+
+    return null;
+  }
+
   function scrollAllToBottom() {
     lastProgrammaticScroll = now();
-    scrollElementToBottom(findBestScroller());
+
+    const latestItem = findLatestConversationItem();
+    if (latestItem) {
+      latestItem.scrollIntoView({
+        block: "end",
+        inline: "nearest",
+        behavior: "auto"
+      });
+    }
+
+    scrollElementToBottom(findBestScroller({ forceRefresh: true }));
+    lastKnownNearBottom = true;
   }
 
   function hasActiveResponseControls() {
@@ -285,9 +318,10 @@
 
     if (isAtBottom) {
       userPausedFollow = false;
+      lastKnownNearBottom = true;
     }
 
-    return time < followUntil || isAtBottom || hasActiveResponseControls();
+    return time < followUntil || isAtBottom || lastKnownNearBottom || hasActiveResponseControls();
   }
 
   function scheduleScroll(delay = 0) {
@@ -343,9 +377,24 @@
     return !form || Boolean(findComposerInput(form));
   }
 
+  function isInsideConversation(target) {
+    const root = findConversationRoot();
+    return Boolean(root && target instanceof Node && root.contains(target));
+  }
+
   function onClick(event) {
     if (isSendAction(event.target)) {
       armFollow();
+      return;
+    }
+
+    if (!settings.enabled || !hasChatSurface() || !isInsideConversation(event.target)) {
+      return;
+    }
+
+    const scroller = findBestScroller();
+    if (isNearBottom(scroller)) {
+      armFollow(CLICK_FOLLOW_MS);
     }
   }
 
@@ -381,15 +430,22 @@
       return;
     }
 
+    const activeScroller = findBestScroller();
     const target =
       event.target === document ? getDocumentScroller() : event.target instanceof HTMLElement ? event.target : null;
 
+    if (target && target !== activeScroller && target !== getDocumentScroller()) {
+      return;
+    }
+
     if (target && !isNearBottom(target)) {
+      lastKnownNearBottom = false;
       userPausedFollow = true;
       return;
     }
 
     if (target && isNearBottom(target)) {
+      lastKnownNearBottom = true;
       userPausedFollow = false;
     }
   }
@@ -433,7 +489,7 @@
     }
 
     mutationObserver = new MutationObserver(onMutation);
-    mutationObserver.observe(findConversationRoot() || document.body || document.documentElement, {
+    mutationObserver.observe(document.body || document.documentElement, {
       childList: true,
       subtree: true,
       characterData: true
