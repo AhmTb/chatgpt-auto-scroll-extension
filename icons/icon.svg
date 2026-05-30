@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" role="img" aria-label="ChatGPT Auto Scroll">
+  <rect width="48" height="48" rx="10" fill="#10a37f"/>
+  <path d="M24 9v25" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+  <path d="m14 26 10 10 10-10" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M13 40h22" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".82"/>
+</svg>

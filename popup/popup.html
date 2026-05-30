@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ChatGPT Auto Scroll</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main class="panel">
+      <div class="title-row">
+        <img src="../icons/icon-48.png" alt="" width="28" height="28">
+        <div>
+          <h1>Auto Scroll</h1>
+          <p id="statusText">Checking status...</p>
+        </div>
+      </div>
+
+      <label class="toggle-row">
+        <span>Keep ChatGPT at the newest answer</span>
+        <input id="enabledToggle" type="checkbox">
+      </label>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

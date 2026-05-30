@@ -1,0 +1,9 @@
+{
+  "name": "chatgpt-auto-scroll-extension",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node --check src/content.js && node --check popup/popup.js && node tests/validate-extension.mjs"
+  }
+}
