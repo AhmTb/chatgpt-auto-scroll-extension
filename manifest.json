@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "ChatGPT Auto Scroll",
   "version": "1.0.0",
-  "description": "Keeps ChatGPT conversations pinned to the newest response while answers are streaming, with a popup on/off toggle.",
+  "description": "Auto-scroll ChatGPT to the latest answer.",
   "permissions": [
     "storage"
   ],
